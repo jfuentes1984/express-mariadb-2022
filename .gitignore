@@ -1,3 +1,5 @@
+model/db.js
+
 # Logs
 logs
 *.log

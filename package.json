@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "SET DEBUG=express-mariadb-2022:* & nodemon start"
+    "dev": "set PORT=8080 & DEBUG=express-mariadb-2022:* & nodemon start"
   },
   "dependencies": {
     "cookie-parser": "~1.4.6",
@@ -12,6 +12,7 @@
     "express": "~4.17.3",
     "hbs": "^4.2.0",
     "http-errors": "~2.0.0",
+    "mariadb": "^3.0.0",
     "morgan": "~1.10.0"
   }
 }
