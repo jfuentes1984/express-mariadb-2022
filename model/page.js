@@ -2,7 +2,7 @@ const dbConnPool = require('./db');
 
 let Page = {};
 
-Page.getPage = async(key) => {
+Page.getPage = async (key) => {
 
     let result = {};
 
@@ -18,6 +18,17 @@ Page.getPage = async(key) => {
     }
 
     return result;
+};
+
+Page.updatePage = async (key, pageData) => {
+
+    let result = {};
+
+    let dbConn = await dbConnPool.getConnection();
+    await dbConn.query("UPDATE `page` SET `title`= ?, content=? WHERE `pageKey`=?;", [pageData.title, pageData.content, key]);
+    dbConn.end();
+
+    return { status: true };
 };
 
 
