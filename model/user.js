@@ -3,6 +3,40 @@ const sha256 = require("crypto-js/sha256"); // usage: hash = sha256("Message");
 let Users = {};
 
 
+Users.addUser = async function(userData) {
+
+    const result = {
+        status: false,
+        user: null,
+        message: "unable to create account"
+    }
+
+    if (userData !== undefined && userData.username !== undefined && userData.username.length > 0 && userData.password !== undefined && userData.first !== undefined && userData.email !== undefined) {
+        userData.username = userData.username.toLowerCase();
+        let userResult = await this.getUserForUsername(userData.username); // find if already existing user
+        console.log(userResult);
+        if (userResult.status) {
+            result.message = `user ${userData.username} already exists`;
+        } else {
+            userData.passHash = sha256(userData.password).toString();
+            let dbConn = await dbConnPool.getConnection();
+            // INSERT INTO `user` (`username`, `first`, `passHash`, `email`) VALUES (?,?,?,?);
+            const queryResult = await dbConn.query(
+                "INSERT INTO `user` (`username`, `first`, `passHash`, `email`) VALUES( ? , ? , ? , ? );", [userData.username, userData.first, userData.passHash, userData.email]);
+            dbConn.end();
+
+            if (queryResult.affectedRows == 1) {
+                result.status = true;
+                result.user = userData;
+                result.message = `user ${queryResult.insertId}:${userData.username} added`;
+                result.user.userId = queryResult.insertId;
+            }
+        }
+    }
+
+    return result;
+}
+
 Users.authWithCookies = async function(username, hash) {
     let dbConn = await dbConnPool.getConnection();
     const rows = await dbConn.query("SELECT  `userId`,  `username`,  `first`,  `cookieHash`,  `email` FROM `user` WHERE `username` = ?;", [username]);
@@ -59,7 +93,7 @@ Users.authWithPassword = async function(username, password) {
     //console.log(passHash, userInfo.passHash);
 
     if (userInfo.passHash === passHash) {
-        // passwords match, username exists
+        // password (hashes) match, username exists
         userInfo.cookieHash = sha256(new Date().getTime() + "" + userInfo.userId).toString();
         this.setCookieHash(userInfo.username, userInfo.cookieHash);
 
@@ -121,5 +155,24 @@ Users.getUser = async(userId) => {
     }
     return result;
 };
+Users.getUserForUsername = async(username) => {
 
+    let result = {};
+    if (username === undefined) {
+        result.status = false;
+    } else {
+        username = username.toLowerCase();
+        let dbConn = await dbConnPool.getConnection();
+        const rows = await dbConn.query("SELECT userId,username,`first` FROM user WHERE username = ?", [username]);
+        dbConn.end();
+
+        if (rows.length > 0) {
+            result.status = true;
+            result.data = rows[0];
+        } else {
+            result.status = false;
+        }
+    }
+    return result;
+};
 module.exports = Users;
